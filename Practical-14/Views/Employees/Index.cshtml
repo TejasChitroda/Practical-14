@@ -1,0 +1,100 @@
+﻿@using PagedList;
+@using PagedList.Mvc;
+
+
+    @model IPagedList<Practical_14.Employee>
+
+@{
+    ViewBag.Title = "Index";
+}
+
+<h2>Employee List</h2>
+
+<p class="m-2">
+    @Html.ActionLink("Create New", "Create")
+    @Html.TextBox("search", null, new { @id = "searchBox", placeholder = "Search by Name" })
+    <button id="searchBtn" onclick="BtnSearch()">Search</button>
+
+</p>
+<div id="ajaxID">
+   
+    <table class="table">
+        <thead>
+            <tr>
+                <th>@Html.DisplayNameFor(model => model.First().Name)</th>
+                <th>@Html.DisplayNameFor(model => model.First().DOB)</th>
+                <th>@Html.DisplayNameFor(model => model.First().Age)</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var item in Model)
+            {
+                <tr>
+                    <td>@Html.DisplayFor(modelItem => item.Name)</td>
+                    <td>@item.DOB.ToString("dd/MM/yyyy")</td>  @* Format Date *@
+                    <td>@Html.DisplayFor(modelItem => item.Age)</td>
+                    <td>
+                        @Html.ActionLink("Edit", "Edit", new { id = item.Id }) |
+                        @Html.ActionLink("Details", "Details", new { id = item.Id }) |
+                        @Html.ActionLink("Delete", "Delete", new { id = item.Id })
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+
+
+</div>
+
+
+@if (Model.Any())
+{
+    <div>
+        @Html.PagedListPager(Model, page => Url.Action("Index", "Employees", new { page, search = Request.QueryString["search"] }))
+    </div>
+}
+
+<script src="~/Scripts/jquery-1.10.2.min.js"></script>
+<script src="~/Scripts/bootstrap.min.js"></script>
+
+<script>
+    function BtnSearch() {
+        var searchValue = $("#searchBox").val(); // Get search input
+
+        $.ajax({
+            url: "/Employees/Search",
+            method: "GET",
+            data: { searchString: searchValue }, // Pass the searchString parameter
+            success: function (data) {
+                var tableContent = ""; // Prepare new table rows
+
+                if (data.length > 0) {
+                    $.each(data, function (index, employee) {
+                        tableContent += "<tr>" +
+                            "<td>" + employee.Name + "</td>" +
+                            "<td>" + employee.DOB + "</td>" +
+                            "<td>" + employee.Age + "</td>" +
+                            "<td>" +
+                            "<a href='/Employees/Edit/" + employee.Id + "'>Edit</a> | " +
+                            "<a href='/Employees/Details/" + employee.Id + "'>Details</a> | " +
+                            "<a href='/Employees/Delete/" + employee.Id + "'>Delete</a>" +
+                            "</td>" +
+                            "</tr>";
+                    });
+                } else {
+                    tableContent = "<tr><td colspan='4' class='text-center'>No records found</td></tr>";
+                }
+
+                $("#ajaxID table tbody").html(tableContent); // Update table
+            },
+            error: function (error) { // Fixed case sensitivity
+                console.log("Error:", error);
+            }
+        });
+    }
+</script>
+
+
+
+
