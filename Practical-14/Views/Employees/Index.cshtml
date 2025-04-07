@@ -67,13 +67,15 @@
             method: "GET",
             data: { searchString: searchValue }, // Pass the searchString parameter
             success: function (data) {
-                var tableContent = ""; // Prepare new table rows
+                var tableContent = "";
 
                 if (data.length > 0) {
                     $.each(data, function (index, employee) {
+                        var formattedDOB = formatDateFromDotNetString(employee.DOB);
+
                         tableContent += "<tr>" +
                             "<td>" + employee.Name + "</td>" +
-                            "<td>" + employee.DOB + "</td>" +
+                            "<td>" + formattedDOB + "</td>" +
                             "<td>" + employee.Age + "</td>" +
                             "<td>" +
                             "<a href='/Employees/Edit/" + employee.Id + "'>Edit</a> | " +
@@ -86,13 +88,26 @@
                     tableContent = "<tr><td colspan='4' class='text-center'>No records found</td></tr>";
                 }
 
-                $("#ajaxID table tbody").html(tableContent); // Update table
-            },
-            error: function (error) { // Fixed case sensitivity
+                $("#ajaxID table tbody").html(tableContent);
+            }
+,
+            error: function (error) { 
                 console.log("Error:", error);
             }
         });
     }
+
+
+    function formatDateFromDotNetString(dotNetDateString) {
+        var timestamp = parseInt(dotNetDateString.replace(/\/Date\((\d+)\)\//, '$1'));
+        var date = new Date(timestamp);
+        var day = ('0' + date.getDate()).slice(-2);
+        var month = ('0' + (date.getMonth() + 1)).slice(-2);
+        var year = date.getFullYear();
+        return `${day}-${month}-${year}`;
+    }
+
+
 </script>
 
 
