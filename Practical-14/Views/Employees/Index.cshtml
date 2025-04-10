@@ -1,115 +1,45 @@
-﻿@using PagedList;
-@using PagedList.Mvc;
-
-
-    @model IPagedList<Practical_14.Employee>
+﻿@model IEnumerable<Practical_14.Employee>
 
 @{
     ViewBag.Title = "Index";
 }
 
-<h2>Employee List</h2>
+<input type="text" id="searchBox" class="form-control" placeholder="Search here" />
 
-<p class="m-2">
-    @Html.ActionLink("Create New", "Create")
-    @Html.TextBox("search", null, new { @id = "searchBox", placeholder = "Search by Name" })
-    <button id="searchBtn" onclick="BtnSearch()">Search</button>
-
-</p>
-<div id="ajaxID">
-   
-    <table class="table">
-        <thead>
-            <tr>
-                <th>@Html.DisplayNameFor(model => model.First().Name)</th>
-                <th>@Html.DisplayNameFor(model => model.First().DOB)</th>
-                <th>@Html.DisplayNameFor(model => model.First().Age)</th>
-                <th>Actions</th>
-            </tr>
-        </thead>
-        <tbody>
-            @foreach (var item in Model)
-            {
-                <tr>
-                    <td>@Html.DisplayFor(modelItem => item.Name)</td>
-                    <td>@item.DOB.ToString("dd/MM/yyyy")</td>  @* Format Date *@
-                    <td>@Html.DisplayFor(modelItem => item.Age)</td>
-                    <td>
-                        @Html.ActionLink("Edit", "Edit", new { id = item.Id }) |
-                        @Html.ActionLink("Details", "Details", new { id = item.Id }) |
-                        @Html.ActionLink("Delete", "Delete", new { id = item.Id })
-                    </td>
-                </tr>
-            }
-        </tbody>
-    </table>
+<br />
 
 
+
+<div id="employeeTable">
+    @Html.Action("Search", "Employees", new { searchTerm = "", page = 1 })
 </div>
-
-
-@if (Model.Any())
-{
-    <div>
-        @Html.PagedListPager(Model, page => Url.Action("Index", "Employees", new { page, search = Request.QueryString["search"] }))
-    </div>
-}
-
-<script src="~/Scripts/jquery-1.10.2.min.js"></script>
-<script src="~/Scripts/bootstrap.min.js"></script>
-
-<script>
-    function BtnSearch() {
-        var searchValue = $("#searchBox").val(); // Get search input
-
+@section Scripts {
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script>
+    // This script handles the AJAX request for searching and pagination
+    function loadData(searchTerm, page) {
         $.ajax({
-            url: "/Employees/Search",
-            method: "GET",
-            data: { searchString: searchValue }, // Pass the searchString parameter
-            success: function (data) {
-                var tableContent = "";
-
-                if (data.length > 0) {
-                    $.each(data, function (index, employee) {
-                        var formattedDOB = formatDateFromDotNetString(employee.DOB);
-
-                        tableContent += "<tr>" +
-                            "<td>" + employee.Name + "</td>" +
-                            "<td>" + formattedDOB + "</td>" +
-                            "<td>" + employee.Age + "</td>" +
-                            "<td>" +
-                            "<a href='/Employees/Edit/" + employee.Id + "'>Edit</a> | " +
-                            "<a href='/Employees/Details/" + employee.Id + "'>Details</a> | " +
-                            "<a href='/Employees/Delete/" + employee.Id + "'>Delete</a>" +
-                            "</td>" +
-                            "</tr>";
-                    });
-                } else {
-                    tableContent = "<tr><td colspan='4' class='text-center'>No records found</td></tr>";
-                }
-
-                $("#ajaxID table tbody").html(tableContent);
-            }
-,
-            error: function (error) { 
-                console.log("Error:", error);
+            url: '@Url.Action("Search", "Employees")',
+            data: { searchTerm: searchTerm, page: page },
+            success: function (data) {                                                                                                                                                                       
+                $("#employeeTable").html(data);
             }
         });
     }
-
-
-    function formatDateFromDotNetString(dotNetDateString) {
-        var timestamp = parseInt(dotNetDateString.replace(/\/Date\((\d+)\)\//, '$1'));
-        var date = new Date(timestamp);
-        var day = ('0' + date.getDate()).slice(-2);
-        var month = ('0' + (date.getMonth() + 1)).slice(-2);
-        var year = date.getFullYear();
-        return `${day}-${month}-${year}`;
-    }
-
-
-</script>
-
-
-
-
+    $(document).ready(function () {
+        // This function is called when the user types in the search box
+        $('#searchBox').on('keyup', function () {
+            let term = $(this).val();
+            loadData(term, 1);
+            console.log(`search term is ${term}`)
+        });
+        // This function is called when the user clicks on a pagination link
+        $(document).on('click', '.page-link', function (e) {
+            e.preventDefault();
+            let page = $(this).data('page');
+            let term = $('#searchBox').val();
+            loadData(term, page);
+        });
+    });
+    </script>
+}

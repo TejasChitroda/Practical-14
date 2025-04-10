@@ -17,19 +17,13 @@ namespace Practical_14.Controllers
         private Practical14Entities db = new Practical14Entities();
 
         // GET: Employees
-        public ActionResult Index(string search, int? page)
+        public ActionResult Index()
         {
-            int pageSize = 10;
-            int pageNumber = (page ?? 1);
+            
+            var employees = db.Employees;
 
-            var employees = db.Employees.AsQueryable();
-
-            if (!string.IsNullOrEmpty(search))
-            {
-                employees = employees.Where(x => x.Name.StartsWith(search));
-            }
-
-            return View(employees.OrderBy(e => e.Id).ToPagedList(pageNumber, pageSize));
+            
+            return View(employees.ToList());
         }
         // GET: Employees/Details/5
         public ActionResult Details(int? id)
@@ -127,40 +121,27 @@ namespace Practical_14.Controllers
         }
 
 
-
-        //  Implement search functionality to search records into the database by Name field using the AJAX.
-        
-        public JsonResult Search(string searchString)
-        {
-            dynamic employees = db.Employees
-                .Where(e => e.Name.ToLower().Contains(searchString.ToLower()))
-                .Select(e => new { e.Id, e.Name, e.DOB, e.Age })
-                .ToList();
-
-            if(searchString == "")
-            {
-                employees = db.Employees.ToList();
-            }
-
-            return Json(employees, JsonRequestBehavior.AllowGet);
-        }
-
-
-
-        //Paging 
-        public JsonResult GetEmployees(string searchStr , int page = 1)
+        public ActionResult Search(string searchTerm, int page = 1)
         {
             int pageSize = 10;
-            var query = db.Employees.AsQueryable();
-            if (!string.IsNullOrEmpty(searchStr))
-            {
-                query = query.Where(x => x.Name.Contains(searchStr));
-            }
-            int totalRecords = query.Count();
-            var data = query.OrderBy(x => x.Id).Skip((page - 1) * pageSize).Take(pageSize).ToList();
 
-            return Json(new { data = data, totalRecords = totalRecords }, JsonRequestBehavior.AllowGet);
+            var employees = db.Employees
+                              .Where(e => string.IsNullOrEmpty(searchTerm) || e.Name.Contains(searchTerm))
+                              .OrderBy(e => e.Id)
+                              .Skip((page - 1) * pageSize)
+                              .Take(pageSize)
+                              .ToList();
+           
+            int totalRecords = db.Employees
+                                 .Count(e => string.IsNullOrEmpty(searchTerm) || e.Name.Contains(searchTerm));
+
+            ViewBag.TotalPages = (int)Math.Ceiling((double)totalRecords / pageSize);
+            ViewBag.CurrentPage = page;
+
+            return PartialView("_EmployeeList", employees);
         }
+
+
 
         protected override void Dispose(bool disposing)
         {
